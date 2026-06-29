@@ -120,6 +120,30 @@ struct DashboardView: View {
                 }
             }
 
+            // Error message display
+            if let error = healthKitManager.errorMessage {
+                VStack(spacing: 4) {
+                    Text("⚠️ \(error)")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                        .lineLimit(3)
+                }
+                .padding(8)
+                .background(Color.orange.opacity(0.1))
+                .cornerRadius(6)
+            }
+            
+            // Processing indicator
+            if healthKitManager.isProcessing {
+                HStack(spacing: 4) {
+                    ProgressView()
+                        .scaleEffect(0.75)
+                    Text("Loading baseline...")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+
             Spacer()
         }
         .padding()
@@ -131,13 +155,19 @@ struct ContentView: View {
     
     var body: some View {
         // Phase 2: Integrated HealthKit Dashboard
-        VStack {
-            DashboardView(healthKitManager: healthKitManager)
+        ZStack {
+            VStack {
+                DashboardView(healthKitManager: healthKitManager)
+            }
+            .padding()
         }
-        .padding()
         .onAppear {
-            // Request HealthKit access on first load
-            healthKitManager.requestAuthorization()
+            // Request HealthKit access on first load with error handling
+            do {
+                healthKitManager.requestAuthorization()
+            } catch {
+                print("❌ Fatal error during HealthKit auth: \(error)")
+            }
         }
     }
 }
