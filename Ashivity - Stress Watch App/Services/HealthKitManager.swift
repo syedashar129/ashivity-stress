@@ -205,17 +205,19 @@ final class HealthKitManager: NSObject, ObservableObject {
             let mapped = 50.0 - (z * 15.0)
             let stressScore = min(max(mapped, 0.0), 100.0)
             
+            // Create StressReading using the Watch App model initializer
             let reading = StressReading(
                 timestamp: sample.startDate,
                 hrvValue: hrvValue,
+                heartRate: nil,
                 stressScore: stressScore,
                 source: "HealthKit"
             )
-            
+
             // Append to cache
             hrvSamples.append(reading)
             newSamplesCount += 1
-            
+
             print("📊 HRV: \(String(format: "%.1f", hrvValue))ms, Stress: \(String(format: "%.0f", stressScore))")
         }
         

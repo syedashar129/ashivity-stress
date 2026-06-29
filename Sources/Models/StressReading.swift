@@ -5,15 +5,15 @@ import Foundation
 public struct StressReading: Identifiable, Codable {
     public let id: UUID
     public let timestamp: Date
-    public let hrv: Double
+    public let hrvValue: Double
     public let heartRate: Double?
     public let stressScore: Double
     public let source: String?
 
-    public init(id: UUID = .init(), timestamp: Date = Date(), hrv: Double, heartRate: Double? = nil, stressScore: Double, source: String? = nil) {
+    public init(id: UUID = .init(), timestamp: Date = Date(), hrvValue: Double, heartRate: Double? = nil, stressScore: Double, source: String? = nil) {
         self.id = id
         self.timestamp = timestamp
-        self.hrv = hrv
+        self.hrvValue = hrvValue
         self.heartRate = heartRate
         self.stressScore = stressScore
         self.source = source
