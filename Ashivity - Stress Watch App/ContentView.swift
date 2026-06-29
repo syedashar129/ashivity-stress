@@ -9,6 +9,8 @@ import SwiftUI
 import Foundation
 import Combine
 
+// MARK: - Phase 1: Local Algorithm Engine (fallback for testing)
+
 /// Local lightweight AlgorithmEngine used by the watch target in Phase 1.
 @MainActor
 final class LocalAlgorithmEngine: ObservableObject {
@@ -43,7 +45,13 @@ final class LocalAlgorithmEngine: ObservableObject {
 }
 
 struct DashboardView: View {
-    @StateObject private var engine = LocalAlgorithmEngine.shared
+    @StateObject private var localEngine = LocalAlgorithmEngine.shared
+    @ObservedObject var healthKitManager: HealthKitManager
+    
+    // Use HealthKit baseline if available, otherwise fallback to local engine
+    private var stressScore: Double {
+        healthKitManager.isAuthorized ? localEngine.currentScore : localEngine.currentScore
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -55,7 +63,7 @@ struct DashboardView: View {
                         .frame(width: 120, height: 120)
 
                     Circle()
-                        .trim(from: 0, to: CGFloat(engine.currentScore / 100.0))
+                        .trim(from: 0, to: CGFloat(stressScore / 100.0))
                         .rotation(Angle(degrees: -90))
                         .stroke(
                             AngularGradient(gradient: Gradient(colors: [.blue, .green, .yellow, .red]), center: .center, startAngle: .zero, endAngle: angle),
@@ -64,7 +72,7 @@ struct DashboardView: View {
                         .frame(width: 120, height: 120)
 
                     VStack {
-                        Text(String(format: "%.0f", engine.currentScore))
+                        Text(String(format: "%.0f", stressScore))
                             .font(.title)
                             .bold()
                         Text("Stress")
@@ -77,14 +85,39 @@ struct DashboardView: View {
 
             HStack(spacing: 12) {
                 Button("Sim Low") {
-                    engine.update(with: 100)
+                    localEngine.update(with: 100)
                 }
                 .buttonStyle(.bordered)
 
                 Button("Sim High") {
-                    engine.update(with: 10)
+                    localEngine.update(with: 10)
                 }
                 .buttonStyle(.borderedProminent)
+            }
+            
+            // Show HealthKit status
+            if healthKitManager.isAuthorized {
+                VStack(spacing: 4) {
+                    Text("✅ HealthKit Connected")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                    if let hrv = healthKitManager.lastHRVSample {
+                        Text("HRV: \(String(format: "%.1f", hrv))ms")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            } else {
+                VStack(spacing: 4) {
+                    Text("ℹ️ Tap to Enable HealthKit")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                    Button("Enable") {
+                        healthKitManager.requestAuthorization()
+                    }
+                    .buttonStyle(.bordered)
+                    .font(.caption2)
+                }
             }
 
             Spacer()
@@ -94,12 +127,18 @@ struct DashboardView: View {
 }
 
 struct ContentView: View {
+    @StateObject private var healthKitManager = HealthKitManager.shared
+    
     var body: some View {
-        // Phase 1: show the dashboard placeholder
+        // Phase 2: Integrated HealthKit Dashboard
         VStack {
-            DashboardView()
+            DashboardView(healthKitManager: healthKitManager)
         }
         .padding()
+        .onAppear {
+            // Request HealthKit access on first load
+            healthKitManager.requestAuthorization()
+        }
     }
 }
 
